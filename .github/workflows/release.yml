@@ -29,11 +29,33 @@ jobs:
       - name: Установка Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Установка Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Установка UV
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+        shell: bash
+
+      - name: Создание и активация виртуального окружения
+        run: |
+          uv venv
+          . .venv/Scripts/activate
+          uv sync
+        shell: bash
+
       - name: Установка зависимостей фронтенда
         run: npm install
 
-      - name: Сборка sidecar (если нужен)
-        run: npm run sidecar
+      - name: Сборка sidecar
+        run: |
+          cd binaries
+          . .venv/Scripts/activate
+          cd ..
+          npm run sidecar
         shell: bash
 
       - name: Сборка и публикация Tauri
