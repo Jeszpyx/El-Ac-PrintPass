@@ -46,10 +46,11 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhCNDlDMkEzMURBNDc3NjAKUldSZ2Q2UWRvOEpKaTkwUHk1V1JxUm5zcDhQWk5KNDJuKzZIL1dOVTlRbUtHMThGd1dRQms0WEcK",
       "endpoints": [
-        "https://github.com/ВАШ_АККАУНТ/ВАШ_РЕПОЗИТОРИЙ/releases/latest/download/latest.json"
+        "https://github.com/Jeszpyx/El-Ac-PrintPass/releases/latest/download/latest.json"
       ],
       "windows": {
-        "installMode": "passive"
+        "installMode": "passive",
+        "installerArgs": ["/S"]
       }
     }
   }

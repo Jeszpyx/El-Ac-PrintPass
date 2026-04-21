@@ -7,7 +7,75 @@ import { useEffect, useState } from "react";
 import { useActivationStore } from "@/store/activation-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { ask, message } from '@tauri-apps/plugin-dialog';
 
+/**
+ * Проверяет наличие обновлений
+ * @param {boolean} silent - Если true, показывает уведомления только когда есть обновление
+ */
+export async function checkForUpdates(silent = true) {
+  try {
+    console.log('Проверка обновлений...');
+
+    const update = await check();
+
+    if (!update) {
+      if (!silent) {
+        await message('У вас установлена последняя версия', {
+          title: 'Обновление',
+          kind: 'info'
+        });
+      }
+      return;
+    }
+
+    console.log(`Найдено обновление: ${update.version}`);
+
+    const shouldUpdate = await ask(
+      `Доступна новая версия ${update.version}. Установить сейчас?`,
+      {
+        title: 'Доступно обновление',
+        kind: 'info',
+        okLabel: 'Установить',
+        cancelLabel: 'Позже'
+      }
+    );
+
+    if (!shouldUpdate) return;
+
+    // Показываем прогресс (можно улучшить)
+    console.log('Скачивание обновления...');
+
+    await update.downloadAndInstall((event) => {
+      switch (event.event) {
+        case 'Started':
+          console.log(`Начало загрузки: ${event.data.contentLength} байт`);
+          break;
+        case 'Progress':
+          console.log(`Прогресс: ${event.data.chunkLength} байт`);
+          break;
+        case 'Finished':
+          console.log('Загрузка завершена');
+          break;
+      }
+    });
+
+    console.log('Установка завершена, перезапуск...');
+    await relaunch();
+
+  } catch (error) {
+    console.error('Ошибка при обновлении:', error);
+
+    if (!silent) {
+      await message(`Не удалось проверить обновления: ${error}`, {
+        title: 'Ошибка',
+        kind: 'error'
+      });
+    }
+  }
+}
 
 export default function PassPrinterApp() {
 
@@ -18,6 +86,15 @@ export default function PassPrinterApp() {
   const checkDate = new Date()
   const targetDate = new Date(2026, 6, 1)
   const isAfterTargetDate = checkDate >= targetDate
+
+  useEffect(() => {
+    checkForUpdates(true);
+
+    // Опционально: проверяем раз в час
+    // const interval = setInterval(() => checkForUpdates(true), 60 * 60 * 1000);
+    // return () => clearInterval(interval);
+  }, []);
+
 
   // Показываем загрузку, пока данные не восстановлены из localStorage
   if (isLoading) {
