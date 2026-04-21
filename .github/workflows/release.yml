@@ -1,3 +1,107 @@
+# name: 'Сборка и публикация релиза'
+# on:
+#   push:
+#     branches:
+#       - main
+#     tags:
+#       - 'v*'
+
+# jobs:
+#   publish-tauri:
+#     permissions:
+#       contents: write
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         include:
+#           - platform: 'windows-latest'
+#             args: ''
+
+#     runs-on: ${{ matrix.platform }}
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Установка Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '24'
+
+#       - name: Установка Rust
+#         uses: dtolnay/rust-toolchain@stable
+
+#       - name: Установка Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.13'
+
+#       - name: Установка UV
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install uv
+#         shell: bash
+
+#       - name: Создание и активация виртуального окружения
+#         run: |
+#           uv venv
+#           . .venv/Scripts/activate
+#           uv sync
+#         shell: bash
+
+#       - name: Установка зависимостей фронтенда
+#         run: npm install
+
+#       - name: Сборка sidecar
+#         run: |
+#           . .venv/Scripts/activate
+#           npm run sidecar
+#         shell: bash
+
+#       - name: Сборка Tauri
+#         env:
+#           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+#         run: |
+#           npm run tauri build
+#         shell: bash
+
+#       - name: Создать latest.json
+#         shell: pwsh
+#         run: |
+#           $sig = Get-Content src-tauri/target/release/bundle/nsis/*.sig -Raw
+#           $tag = "${{ github.ref_name }}"
+#           $version = $tag.TrimStart("v")
+#           $date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+#           $json = @{
+#             version = $version
+#             notes = "Список изменений"
+#             pub_date = $date
+#             platforms = @{
+#               "windows-x86_64" = @{
+#                 signature = $sig
+#                 url = "https://github.com/${{ github.repository }}/releases/download/$tag/Электра-АС печать пропусков_${version}_x64-setup.exe"
+#               }
+#             }
+#           } | ConvertTo-Json -Depth 5
+
+#           $json | Out-File -Encoding utf8NoBOM latest.json
+
+#       - name: Создание релиза
+#         uses: softprops/action-gh-release@v2
+#         with:
+#           tag_name: ${{ github.ref_name }}
+#           name: 'Электра-АС печать пропусков v${{ github.ref_name }}'
+#           body: |
+#             - Список изменений
+#           draft: false
+#           prerelease: false
+#           files: |
+#             src-tauri/target/release/bundle/nsis/*.exe
+#             src-tauri/target/release/bundle/nsis/*.sig
+#             latest.json
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
 name: 'Сборка и публикация релиза'
 on:
   push:
@@ -63,33 +167,36 @@ jobs:
           npm run tauri build
         shell: bash
 
-      - name: Создать latest.json
-        shell: pwsh
+      - name: Создать latest.json (правильный JSON)
+        shell: bash
         run: |
-          $sig = Get-Content src-tauri/target/release/bundle/nsis/*.sig -Raw
-          $tag = "${{ github.ref_name }}"
-          $version = $tag.TrimStart("v")
-          $date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-
-          $json = @{
-            version = $version
-            notes = "Список изменений"
-            pub_date = $date
-            platforms = @{
-              "windows-x86_64" = @{
-                signature = $sig
-                url = "https://github.com/${{ github.repository }}/releases/download/$tag/Электра-АС печать пропусков_${version}_x64-setup.exe"
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          SIG=$(cat src-tauri/target/release/bundle/nsis/*.sig | tr -d '\n\r')
+          
+          cat > latest.json << EOF
+          {
+            "version": "${VERSION}",
+            "notes": "Список изменений",
+            "pub_date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "platforms": {
+              "windows-x86_64": {
+                "signature": "${SIG}",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Электра-АС печать пропусков_${VERSION}_x64-setup.exe"
               }
             }
-          } | ConvertTo-Json -Depth 5
+          }
+          EOF
 
-          $json | Out-File -Encoding utf8NoBOM latest.json
+      - name: Проверить JSON
+        run: cat latest.json | jq .
+        shell: bash
 
       - name: Создание релиза
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: 'Электра-АС печать пропусков v${{ github.ref_name }}'
+          name: 'Электра-АС печать пропусков ${{ github.ref_name }}'
           body: |
             - Список изменений
           draft: false
