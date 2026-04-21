@@ -1,0 +1,56 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Электра-АС печать пропусков",
+  "version": "0.1.0",
+  "identifier": "El-Ac-Print-Pass",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build & npm run sidecar",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../out"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Электра-АС печать пропусков",
+        "width": 1280,
+        "height": 720,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "nsis",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico"],
+    "createUpdaterArtifacts": true,
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installMode": "perMachine",
+        "languages": ["Russian"],
+        "displayLanguageSelector": false
+      },
+      "webviewInstallMode": {
+        "type": "offlineInstaller",
+        "silent": true
+      }
+    },
+    "externalBin": ["binaries/backend"]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhCNDlDMkEzMURBNDc3NjAKUldSZ2Q2UWRvOEpKaTkwUHk1V1JxUm5zcDhQWk5KNDJuKzZIL1dOVTlRbUtHMThGd1dRQms0WEcK",
+      "endpoints": [
+        "https://github.com/ВАШ_АККАУНТ/ВАШ_РЕПОЗИТОРИЙ/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

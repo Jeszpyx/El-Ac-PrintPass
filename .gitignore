@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+.next
+node_modules
+
+out
+
+src-tauri/binaries/*
+src-tauri/target
+
+*.fdb
+
+~/.tauri/
+*.key
+*.priv
+tauri.signer.key
