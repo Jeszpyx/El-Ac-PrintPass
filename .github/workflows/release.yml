@@ -64,18 +64,25 @@ jobs:
         shell: bash
 
       - name: Создать latest.json
+        shell: pwsh
         run: |
-          echo '{
-            "version": "'${{ github.ref_name }}'",
-            "notes": "Список изменений",
-            "pub_date": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
-            "platforms": {
-              "windows-x86_64": {
-                "signature": "'$(cat src-tauri/target/release/bundle/nsis/*.sig)'",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Электра-АС печать пропусков_${{ github.ref_name }}_x64-setup.exe"
+          $sig = Get-Content src-tauri/target/release/bundle/nsis/*.sig -Raw
+          $version = "${{ github.ref_name }}"
+          $date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+          $json = @{
+            version = $version
+            notes = "Список изменений"
+            pub_date = $date
+            platforms = @{
+              "windows-x86_64" = @{
+                signature = $sig
+                url = "https://github.com/${{ github.repository }}/releases/download/$version/Электра-АС печать пропусков_${version}_x64-setup.exe"
               }
             }
-          }' > latest.json
+          } | ConvertTo-Json -Depth 5
+
+          $json | Out-File -Encoding utf8 latest.json
 
       - name: Создание релиза
         uses: softprops/action-gh-release@v2
