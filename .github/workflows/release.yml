@@ -52,9 +52,9 @@ jobs:
 
       - name: Сборка sidecar
         run: |
-          cd binaries
+          # cd binaries
           . .venv/Scripts/activate
-          cd ..
+          # cd ..
           npm run sidecar
         shell: bash
 
