@@ -24,7 +24,7 @@ jobs:
       - name: Установка Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: '24'
 
       - name: Установка Rust
         uses: dtolnay/rust-toolchain@stable
@@ -52,23 +52,34 @@ jobs:
 
       - name: Сборка sidecar
         run: |
-          # cd binaries
           . .venv/Scripts/activate
-          # cd ..
           npm run sidecar
         shell: bash
 
-      - name: Сборка и публикация Tauri
-        uses: tauri-apps/tauri-action@v0
+      - name: Сборка Tauri
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          npm run tauri build
+        shell: bash
+
+      - name: Генерация latest.json
+        run: |
+          npx tauri updater generate
+        shell: bash
+
+      - name: Создание релиза
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.ref_name }}
+          name: 'Электра-АС печать пропусков v${{ github.ref_name }}'
+          body: |
+            - Список изменений
+          draft: false
+          prerelease: false
+          files: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/nsis/*.sig
+            src-tauri/target/release/latest.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        with:
-          tagName: v__VERSION__
-          releaseName: 'Электра-АС печать пропусков v__VERSION__'
-          releaseBody: |            
-            - Список изменений
-          releaseDraft: false
-          prerelease: false
-          args: ${{ matrix.args }}
-          includeUpdaterJson: true
