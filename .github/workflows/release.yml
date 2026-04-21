@@ -63,10 +63,19 @@ jobs:
           npm run tauri build
         shell: bash
 
-      - name: Генерация latest.json
+      - name: Создать latest.json
         run: |
-          npx tauri updater generate
-        shell: bash
+          echo '{
+            "version": "'${{ github.ref_name }}'",
+            "notes": "Список изменений",
+            "pub_date": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
+            "platforms": {
+              "windows-x86_64": {
+                "signature": "'$(cat src-tauri/target/release/bundle/nsis/*.sig)'",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Электра-АС печать пропусков_${{ github.ref_name }}_x64-setup.exe"
+              }
+            }
+          }' > latest.json
 
       - name: Создание релиза
         uses: softprops/action-gh-release@v2
